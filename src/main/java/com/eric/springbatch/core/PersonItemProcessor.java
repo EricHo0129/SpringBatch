@@ -26,7 +26,7 @@ public class PersonItemProcessor implements ItemProcessor<Person, Person> {
         if (person.getFirstName().equals("Joe")) {
         	throw new TimeoutException("Too many seconds..."+person);
         }
-        Thread.sleep(1600);
+        //Thread.sleep(1600);
         log.info("Converting (" + person + ") into (" + transformedPerson + ")");
 
         return transformedPerson;
