@@ -6,6 +6,7 @@ import org.springframework.batch.core.configuration.annotation.EnableBatchProces
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
+import org.springframework.batch.core.step.skip.SkipPolicy;
 import org.springframework.batch.item.database.JdbcBatchItemWriter;
 import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
@@ -16,6 +17,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 
+import com.eric.springbatch.core.FileVerificationSkipper;
 import com.eric.springbatch.core.JobCompletionNotificationListener;
 import com.eric.springbatch.core.PersonItemProcessor;
 import com.eric.springbatch.core.SimulateItemWriter;
@@ -71,10 +73,17 @@ public class BatchConfig {
     }
 	
 	@Bean
-    public Step step1(SimulateItemWriter writer) {
+	public SkipPolicy fileVerificationSkipper() {
+	    return new FileVerificationSkipper();
+	}
+
+	
+	@Bean
+    public Step step1(ListItemWriter<Person> writer, SkipPolicy skipPolicy) {
         return stepBuilderFactory.get("step1")
             .<Person, Person> chunk(10)
             .reader(reader()) //指定讀取者
+            .faultTolerant().skipPolicy(skipPolicy)
             .processor(processor()) //讀取後的處理者
             .writer(writer) //處理後的寫入者
             .build();
