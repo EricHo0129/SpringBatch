@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import com.eric.springbatch.core.FileVerificationSkipper;
 import com.eric.springbatch.core.JobCompletionNotificationListener;
@@ -61,6 +62,14 @@ public class BatchConfig {
 	
 	
 	//工作階段設定
+	@Bean
+	public ThreadPoolTaskExecutor taskExecutor() {
+		ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
+		taskExecutor.setCorePoolSize(3);
+		taskExecutor.setMaxPoolSize(6);
+		taskExecutor.setWaitForTasksToCompleteOnShutdown(true);
+		return taskExecutor;
+	}
 	
 	@Bean
     public Job importUserJob(JobCompletionNotificationListener listener, Step step1) {
@@ -79,13 +88,14 @@ public class BatchConfig {
 
 	
 	@Bean
-    public Step step1(ListItemWriter<Person> writer, SkipPolicy skipPolicy) {
+    public Step step1(ListItemWriter<Person> writer, SkipPolicy skipPolicy, ThreadPoolTaskExecutor taskExecutor) {
         return stepBuilderFactory.get("step1")
-            .<Person, Person> chunk(10)
+            .<Person, Person> chunk(5)
             .reader(reader()) //指定讀取者
             .faultTolerant().skipPolicy(skipPolicy)
             .processor(processor()) //讀取後的處理者
             .writer(writer) //處理後的寫入者
+            .taskExecutor(taskExecutor)
             .build();
     }
 }
