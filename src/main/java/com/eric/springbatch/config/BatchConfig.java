@@ -108,7 +108,7 @@ public class BatchConfig {
 	
 	@Bean
     public Job importUserJob() {
-        return jobBuilderFactory.get("importUserJob")
+        return jobBuilderFactory.get(apNo+"-Job")
             .incrementer(incrementer())
             .listener(listener)
             .flow(step1())
@@ -136,7 +136,7 @@ public class BatchConfig {
 	
 	@Bean
     public Step step1() {
-        return stepBuilderFactory.get("step1")
+        return stepBuilderFactory.get(apNo+"-Step")
             .<Person, Person> chunk(5)
             .reader(reader()) //指定讀取者
             .faultTolerant().skipPolicy(fileVerificationSkipper())
@@ -167,7 +167,7 @@ public class BatchConfig {
     	return factory.getObject();
     }
 	
-	@Scheduled(fixedRate = 15000, initialDelay=10000)
+	@Scheduled(fixedRate = 10000, initialDelay=6000)
     public void launchJob() throws Exception {
         Date date = new Date();
         log.info("scheduler starts at " + date);
