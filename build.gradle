@@ -33,7 +33,6 @@ dependencies {
     compile 'org.springframework.boot:spring-boot-starter-web'
 	compile 'org.aspectj:aspectjweaver:1.9.1'
 	compile 'mysql:mysql-connector-java:5.1.18'
-    compile("org.hsqldb:hsqldb")
     testCompile("junit:junit")
 }
 
