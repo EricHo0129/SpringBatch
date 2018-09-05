@@ -1,5 +1,6 @@
 package com.eric.springbatch.config;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import org.slf4j.Logger;
@@ -13,12 +14,12 @@ import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.explore.JobExplorer;
+import org.springframework.batch.core.explore.support.JobExplorerFactoryBean;
 import org.springframework.batch.core.launch.JobLauncher;
-import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.launch.support.SimpleJobLauncher;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.repository.support.JobRepositoryFactoryBean;
-import org.springframework.batch.core.repository.support.MapJobRepositoryFactoryBean;
 import org.springframework.batch.core.step.skip.SkipPolicy;
 import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
@@ -26,9 +27,12 @@ import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
 import org.springframework.batch.item.support.ListItemWriter;
 import org.springframework.batch.support.transaction.ResourcelessTransactionManager;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Scope;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -46,8 +50,12 @@ import com.eric.springbatch.model.Person;
 public class BatchConfig {
 	
 	private final Logger log = LoggerFactory.getLogger(BatchConfig.class);
-	
-	private final String apNo = "AP-9999";
+	//AP主要識別
+	public static final String AP_JOB_KEY = "AP-9999";
+	//AP工作名稱
+	public static final String AP_JOB_NAME = AP_JOB_KEY+"-CONVERT_USER";
+	//AP階段名稱
+	public static final String AP_JOB_STEP = AP_JOB_NAME+"-STEP";
 	
 	@Autowired
     public JobBuilderFactory jobBuilderFactory;
@@ -67,6 +75,11 @@ public class BatchConfig {
     	dataSource.setUsername("root");
     	dataSource.setPassword("ec2user");
     	return dataSource;
+    }
+    
+    @Bean
+    public JdbcTemplate jdbcTemplate(DriverManagerDataSource dataSource) {
+    	return new JdbcTemplate(dataSource);
     }
 
     
@@ -108,22 +121,20 @@ public class BatchConfig {
 	
 	@Bean
     public Job importUserJob() {
-        return jobBuilderFactory.get(apNo+"-Job")
+        return jobBuilderFactory.get(AP_JOB_NAME)
             .incrementer(incrementer())
             .listener(listener)
             .flow(step1())
             .end()
             .build();
     }
+    
 	
 	private JobParametersIncrementer incrementer() {
 		return new JobParametersIncrementer() {
 			@Override
 			public JobParameters getNext(JobParameters parameters) {
-//				JobParameters params = (parameters == null) ? new JobParameters() : parameters;
-//				long id = params.getLong(apNo, 0L) + 1;
-//				return new JobParametersBuilder(params).addLong(apNo, id).toJobParameters();
-				return new JobParametersBuilder().addDate(apNo, new Date()).toJobParameters();
+				return new JobParametersBuilder().addDate(AP_JOB_NAME, new Date()).toJobParameters();
 			}
 		};
 	}
@@ -136,7 +147,7 @@ public class BatchConfig {
 	
 	@Bean
     public Step step1() {
-        return stepBuilderFactory.get(apNo+"-Step")
+        return stepBuilderFactory.get(AP_JOB_STEP)
             .<Person, Person> chunk(5)
             .reader(reader()) //指定讀取者
             .faultTolerant().skipPolicy(fileVerificationSkipper())
@@ -166,13 +177,22 @@ public class BatchConfig {
     	factory.afterPropertiesSet();
     	return factory.getObject();
     }
+    
+    @Bean
+    public JobExplorer jobExplorer() throws Exception {
+    	JobExplorerFactoryBean factory = new JobExplorerFactoryBean();
+    	factory.setDataSource(dataSource());
+    	factory.afterPropertiesSet();
+    	return factory.getObject();
+    }
 	
-	@Scheduled(fixedRate = 10000, initialDelay=6000)
+	@Scheduled(fixedRate = 15000)
     public void launchJob() throws Exception {
-        Date date = new Date();
-        log.info("scheduler starts at " + date);
-        
-            JobExecution jobExecution = jobLauncher().run(importUserJob(), incrementer().getNext(null));
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+		Date date = new Date();
+        log.info("scheduler starts at " + sdf.format(date));
+        Job job = importUserJob();
+            JobExecution jobExecution = jobLauncher().run(job, job.getJobParametersIncrementer().getNext(null));
             log.info("Batch job ends with status as " + jobExecution.getStatus());
         
         log.info("scheduler ends ");
