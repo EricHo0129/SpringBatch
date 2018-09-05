@@ -27,10 +27,8 @@ import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
 import org.springframework.batch.item.support.ListItemWriter;
 import org.springframework.batch.support.transaction.ResourcelessTransactionManager;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Scope;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
@@ -56,6 +54,8 @@ public class BatchConfig {
 	public static final String AP_JOB_NAME = AP_JOB_KEY+"-CONVERT_USER";
 	//AP階段名稱
 	public static final String AP_JOB_STEP = AP_JOB_NAME+"-STEP";
+	//啟動標記
+	private boolean enabled = true;
 	
 	@Autowired
     public JobBuilderFactory jobBuilderFactory;
@@ -190,11 +190,29 @@ public class BatchConfig {
     public void launchJob() throws Exception {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 		Date date = new Date();
-        log.info("scheduler starts at " + sdf.format(date));
-        Job job = importUserJob();
-            JobExecution jobExecution = jobLauncher().run(job, job.getJobParametersIncrementer().getNext(null));
-            log.info("Batch job ends with status as " + jobExecution.getStatus());
-        
-        log.info("scheduler ends ");
+		if (enabled) {			
+			log.info("scheduler starts at " + sdf.format(date));
+			Job job = importUserJob();
+			JobExecution jobExecution = jobLauncher().run(job, job.getJobParametersIncrementer().getNext(null));
+			log.info("Batch job ends with status as " + jobExecution.getStatus());
+			
+			log.info("scheduler ends ");
+		} else {
+			log.info("scheduler couldn't start at " + sdf.format(date));
+		}
     }
+	
+	/*
+	 * 允許排程器執行
+	 */
+	public void start() {
+		this.enabled = true;
+	}
+	
+	/**
+	 * 停止排程器執行
+	 */
+	public void stop() {
+		this.enabled = false;
+	}
 }
