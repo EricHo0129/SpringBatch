@@ -27,13 +27,16 @@ public class JobCompletionNotificationListener extends JobExecutionListenerSuppo
 	@Override
 	public void beforeJob(JobExecution jobExecution) {
 		// 清除舊資料
-		int remain = 4; //留4筆與將要跑的1筆=5筆
-		jdbcTemplate.update("delete from batch_step_execution_context");
-		jdbcTemplate.update("delete from batch_step_execution where JOB_EXECUTION_ID < (select ID from batch_job_seq) - ?", remain);
-		jdbcTemplate.update("delete from batch_job_execution_params where JOB_EXECUTION_ID < (select ID from batch_job_seq) - ?", remain);
-		jdbcTemplate.update("delete from batch_job_execution_context where JOB_EXECUTION_ID < (select ID from batch_job_seq) - ?", remain);
-		jdbcTemplate.update("delete from batch_job_execution where JOB_EXECUTION_ID < (select ID from batch_job_seq) - ?", remain);
-		int result = jdbcTemplate.update("delete from batch_job_instance where JOB_INSTANCE_ID < (select ID from batch_job_seq) - ?", remain);
-		log.info("!!! OLD JOB HAS BEEN DELETED! ("+result+")");
+		boolean clean = false;
+		if (clean) {
+			int remain = 4; //留4筆與將要跑的1筆=5筆
+			jdbcTemplate.update("delete from batch_step_execution_context");
+			jdbcTemplate.update("delete from batch_step_execution where JOB_EXECUTION_ID < (select ID from batch_job_seq) - ?", remain);
+			jdbcTemplate.update("delete from batch_job_execution_params where JOB_EXECUTION_ID < (select ID from batch_job_seq) - ?", remain);
+			jdbcTemplate.update("delete from batch_job_execution_context where JOB_EXECUTION_ID < (select ID from batch_job_seq) - ?", remain);
+			jdbcTemplate.update("delete from batch_job_execution where JOB_EXECUTION_ID < (select ID from batch_job_seq) - ?", remain);
+			int result = jdbcTemplate.update("delete from batch_job_instance where JOB_INSTANCE_ID < (select ID from batch_job_seq) - ?", remain);
+			log.info("!!! OLD JOB HAS BEEN DELETED! ("+result+")");			
+		}
 	}
 }

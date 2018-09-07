@@ -51,6 +51,7 @@ import com.eric.springbatch.core.FileVerificationSkipper;
 import com.eric.springbatch.core.JobCompletionNotificationListener;
 import com.eric.springbatch.core.PersonItemProcessor;
 import com.eric.springbatch.core.PersonItemReader;
+import com.eric.springbatch.core.ProcessListener;
 import com.eric.springbatch.core.SimulateItemWriter;
 import com.eric.springbatch.model.Person;
 
@@ -84,6 +85,9 @@ public class BatchConfig {
     
     @Autowired
     public JobCompletionNotificationListener listener;
+    
+    @Autowired
+    public ProcessListener processListener;
     
     //資料庫設定
     @Bean
@@ -186,11 +190,12 @@ public class BatchConfig {
     public Step step1() {
         return stepBuilderFactory.get(AP_JOB_STEP)
             .<Person, Person> chunk(5)
+            .listener(processListener)
             .reader(personReader()) //指定讀取者
             .faultTolerant().skipPolicy(fileVerificationSkipper())
             .processor(processor()) //讀取後的處理者
             .writer(writer()) //處理後的寫入者
-            //.taskExecutor(taskExecutor())
+            .taskExecutor(taskExecutor())
             .build();
     }
 	
