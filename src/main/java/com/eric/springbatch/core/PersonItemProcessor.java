@@ -22,8 +22,9 @@ public class PersonItemProcessor implements ItemProcessor<Person, Person> {
 
         final Person transformedPerson = new Person(firstName, lastName);
         log.info("Converting (" + person + ") starting...");
-        
+        //模擬Timeout的狀況
         if (person.getFirstName().equals("Joe")) {
+        	Thread.sleep(1000);
         	throw new TimeoutException("Too many seconds..."+person);
         }
         //Thread.sleep(1600);

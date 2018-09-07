@@ -18,6 +18,7 @@ import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.explore.JobExplorer;
 import org.springframework.batch.core.explore.support.JobExplorerFactoryBean;
 import org.springframework.batch.core.launch.JobLauncher;
@@ -25,6 +26,7 @@ import org.springframework.batch.core.launch.support.SimpleJobLauncher;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.repository.support.JobRepositoryFactoryBean;
 import org.springframework.batch.core.step.skip.SkipPolicy;
+import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
 import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
@@ -34,6 +36,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Scope;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
@@ -47,6 +50,7 @@ import org.springframework.scheduling.support.ScheduledMethodRunnable;
 import com.eric.springbatch.core.FileVerificationSkipper;
 import com.eric.springbatch.core.JobCompletionNotificationListener;
 import com.eric.springbatch.core.PersonItemProcessor;
+import com.eric.springbatch.core.PersonItemReader;
 import com.eric.springbatch.core.SimulateItemWriter;
 import com.eric.springbatch.model.Person;
 
@@ -100,16 +104,9 @@ public class BatchConfig {
     
     //程序設定
     @Bean
-    public FlatFileItemReader<Person> reader() {
-        return new FlatFileItemReaderBuilder<Person>()
-            .name("personItemReader")
-            .resource(new ClassPathResource("sample-data.csv"))
-            .delimited()
-            .names(new String[]{"firstName", "lastName"})
-            .fieldSetMapper(new BeanWrapperFieldSetMapper<Person>() {{
-                setTargetType(Person.class);
-            }})
-            .build();
+    @StepScope
+    public ItemReader<Person> personReader() {
+    	return new PersonItemReader();
     }
     
 	@Bean
@@ -189,11 +186,11 @@ public class BatchConfig {
     public Step step1() {
         return stepBuilderFactory.get(AP_JOB_STEP)
             .<Person, Person> chunk(5)
-            .reader(reader()) //指定讀取者
+            .reader(personReader()) //指定讀取者
             .faultTolerant().skipPolicy(fileVerificationSkipper())
             .processor(processor()) //讀取後的處理者
             .writer(writer()) //處理後的寫入者
-            .taskExecutor(taskExecutor())
+            //.taskExecutor(taskExecutor())
             .build();
     }
 	
@@ -266,6 +263,7 @@ public class BatchConfig {
 		this.enabled = true;
 		BatchConfig config = appContext.getBean(BatchConfig.class);
 		poolScheduler().scheduleAtFixedRate(new ScheduledMethodRunnable(config, "launchJob"), 10000);
+		log.info("scheduledTasks has been started.");
 	}
 	
 	/**
@@ -278,5 +276,6 @@ public class BatchConfig {
 			}
 		});
 		this.enabled = false;
+		log.info("scheduledTasks has been stoped.");
 	}
 }
