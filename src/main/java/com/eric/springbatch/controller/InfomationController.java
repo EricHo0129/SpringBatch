@@ -12,6 +12,7 @@ import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobInstance;
 import org.springframework.batch.core.explore.JobExplorer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -21,12 +22,18 @@ import com.eric.springbatch.config.BatchConfig;
 public class InfomationController {
 	
 	@Autowired
+	private ApplicationContext context;
+	
+	@Autowired
 	private JobExplorer jobExplorer;
 	
 	@GetMapping("/last")
 	public Map<String, Object> getLastInfo() throws Exception {
+		BatchConfig batchConfig = context.getBean(BatchConfig.class);
+		
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		Map<String, Object> result = new HashMap<>();
+		result.put("current-status", batchConfig.currentStatus()?"Started":"Stoped");
 		result.put("job-count", jobExplorer.getJobInstanceCount(BatchConfig.AP_JOB_NAME));
 		List<JobInstance> jobInsList = jobExplorer.findJobInstancesByJobName(BatchConfig.AP_JOB_NAME, 0, 1);
 		if (jobInsList!=null && jobInsList.size()>0) {
@@ -35,6 +42,7 @@ public class InfomationController {
 		}
 		Set<JobExecution> jobExecSet = jobExplorer.findRunningJobExecutions(BatchConfig.AP_JOB_NAME);
 		result.put("running-job-count", jobExecSet.size());
+		result.put("launched-job-count", batchConfig.currentLaunchJobCount());
 		Optional<JobExecution> lastJobExec = jobExecSet.stream().sorted(Comparator.comparingLong(JobExecution::getId).reversed()).findFirst();
 		if (lastJobExec.isPresent()) {			
 			JobExecution last = lastJobExec.get();

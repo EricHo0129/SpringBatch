@@ -2,6 +2,10 @@ package com.eric.springbatch.config;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.IdentityHashMap;
+import java.util.Map;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,14 +31,18 @@ import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
 import org.springframework.batch.item.support.ListItemWriter;
 import org.springframework.batch.support.transaction.ResourcelessTransactionManager;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
+import org.springframework.scheduling.support.ScheduledMethodRunnable;
 
 import com.eric.springbatch.core.FileVerificationSkipper;
 import com.eric.springbatch.core.JobCompletionNotificationListener;
@@ -56,6 +64,13 @@ public class BatchConfig {
 	public static final String AP_JOB_STEP = AP_JOB_NAME+"-STEP";
 	//啟動標記
 	private boolean enabled = true;
+	//任務計數器
+	private AtomicInteger batchRunCounter = new AtomicInteger(0);
+	//目前正在執行的排程
+	private final Map<Object, ScheduledFuture<?>> scheduledTasks = new IdentityHashMap<>();
+	
+	@Autowired
+	private ApplicationContext appContext;
 	
 	@Autowired
     public JobBuilderFactory jobBuilderFactory;
@@ -118,6 +133,31 @@ public class BatchConfig {
 		taskExecutor.setWaitForTasksToCompleteOnShutdown(true);
 		return taskExecutor;
 	}
+	
+	@Bean
+    public TaskScheduler poolScheduler() {
+        return new CustomTaskScheduler();
+    }
+
+	/**
+	 * 自訂的排程器 
+	 */
+    private class CustomTaskScheduler extends ThreadPoolTaskScheduler {
+
+        private static final long serialVersionUID = -5564662992816645752L;
+
+		@Override
+        public ScheduledFuture<?> scheduleAtFixedRate(Runnable task, long period) {
+            ScheduledFuture<?> future = super.scheduleAtFixedRate(task, period);
+
+            ScheduledMethodRunnable runnable = (ScheduledMethodRunnable) task;
+            //放入類別層級的暫存空間,以便做控制(getTarget出來是指BatchConfig這個類)
+            scheduledTasks.put(runnable.getTarget(), future);
+
+            return future;
+        }
+
+    }
 	
 	@Bean
     public Job importUserJob() {
@@ -186,33 +226,57 @@ public class BatchConfig {
     	return factory.getObject();
     }
 	
-	@Scheduled(fixedRate = 15000)
+	@Scheduled(fixedRate = 10000)
     public void launchJob() throws Exception {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 		Date date = new Date();
 		if (enabled) {			
 			log.info("scheduler starts at " + sdf.format(date));
 			Job job = importUserJob();
+			batchRunCounter.incrementAndGet();
 			JobExecution jobExecution = jobLauncher().run(job, job.getJobParametersIncrementer().getNext(null));
 			log.info("Batch job ends with status as " + jobExecution.getStatus());
-			
-			log.info("scheduler ends ");
+			log.info("----- scheduler ends -----");
+			batchRunCounter.decrementAndGet();
 		} else {
-			log.info("scheduler couldn't start at " + sdf.format(date));
+			log.info("[enabled=false] scheduler couldn't start at " + sdf.format(date));
 		}
     }
 	
+	/**
+	 * 目前Job執行數量
+	 * @return
+	 */
+	public int currentLaunchJobCount() {
+		return batchRunCounter.get()>0?batchRunCounter.get():0;
+	}
+	
+	/**
+	 * 目前的啟動狀態
+	 * @return
+	 */
+	public boolean currentStatus() {
+		return this.enabled;
+	}
+ 	
 	/*
 	 * 允許排程器執行
 	 */
-	public void start() {
+	public void start() throws Exception {
 		this.enabled = true;
+		BatchConfig config = appContext.getBean(BatchConfig.class);
+		poolScheduler().scheduleAtFixedRate(new ScheduledMethodRunnable(config, "launchJob"), 10000);
 	}
 	
 	/**
 	 * 停止排程器執行
 	 */
 	public void stop() {
+		scheduledTasks.forEach((key, val)->{
+			if (key instanceof BatchConfig) {
+				val.cancel(false); //不強制中斷
+			}
+		});
 		this.enabled = false;
 	}
 }
