@@ -38,7 +38,8 @@ Spring-Batch的測試與練習
 - 一個工作階段最多各有一個Reader、Processor、Writer
 - 定義chunk的大小(Step的群聚，到達chunk設定的大小就會執行write)
 - 可設定listener做前後處理
-- 可設定忽略原則已經分散
+- 可設定忽略原則判斷哪些錯誤可忽略或不可忽略
+- ![架構參考](https://blog.codecentric.de/files/2012/03/Blog_Transactions_Listeners-1024x528.png)
 
 ### Listener
 - 目前僅用到ItemProcessor，用來記錄處理前後的資料樣貌
