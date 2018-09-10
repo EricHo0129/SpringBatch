@@ -114,11 +114,13 @@ public class BatchConfig {
     }
     
 	@Bean
+	@StepScope
     public PersonItemProcessor processor() {
         return new PersonItemProcessor();
     }
 	
 	@Bean
+	@StepScope
     public ListItemWriter<Person> writer() {
         return new SimulateItemWriter();
     }
@@ -189,7 +191,7 @@ public class BatchConfig {
 	@Bean
     public Step step1() {
         return stepBuilderFactory.get(AP_JOB_STEP)
-            .<Person, Person> chunk(5)
+            .<Person, Person> chunk(3)
             .listener(processListener)
             .reader(personReader()) //指定讀取者
             .faultTolerant().skipPolicy(fileVerificationSkipper())
