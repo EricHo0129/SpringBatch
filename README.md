@@ -73,7 +73,19 @@ Spring-Batch的測試與練習
 - 先擬定分散/非同步的策略，再決定採用SpringBatch的四種分散方式
 - 以下是以非同步執行Step的方式進行分散，假設通常是Reader夠快，慢在資料處理以及寫入。
 - chunk的大小影響分散的效果，需依實際執行狀況調整
-
+- 簡述SpringBatch的四種分散策略
+  - 多執行緒執行Step
+    - 每個執行緒分別執行read / process / write 以chunk為單位
+    - 因為以上組件會保存狀態,所以要特別注意(需為無狀態才能確保執行正常)
+    - reader讀取同樣分量的數據,但有不同執行緒來取用
+    - writer在每個執行緒的最後會呼叫一次
+  - 單執行緒並行Step
+    - 一個Job中會有許多Step，但有些Step彼此沒有相依，便可以並行縮短時間
+  - 遠端步驟群(Remote Chunking)略
+  - 資料分群
+    - 一樣是多執行緒
+    - 每個執行緒讀取的資料分開
+    
 ### Multi-threaded Step
 - 將Step進行非同步執行，但同一個chunk還是會等滿了再送出，也就是同一個chunk內的程序視為同步
 - chunk的大小會影響分配taskExecutor的方式,也就是若chunk過大則會讓多筆資料放在同一條thread執行
