@@ -67,7 +67,10 @@ Spring-Batch的測試與練習
 
 ## Schedule
 - 使用Spring的排程作法(會檢查排程是否進行,若已進行就不會發生作用)
-- 如果是一次性的就不需要做排程
+- 如果是一次性的就不需要做排程(MainProcess)
+- 這裡有一個重要的差別：排程是由主程序丟出一個執行緒來執行的
+  - 排程進行的同時可以另外啟動一個Job去處理先前失敗的Job
+  - JobRepository的清除會影響失敗Job的處理
 
 ## Scaling and Parallel
 - 先擬定分散/非同步的策略，再決定採用SpringBatch的四種分散方式
