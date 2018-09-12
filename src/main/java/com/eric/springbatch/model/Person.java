@@ -14,7 +14,6 @@ public class Person {
     }
 
     public void setFirstName(String firstName) {
-    	if (firstName.equals("Jill")) throw new RuntimeException("No Jill!");
         this.firstName = firstName;
     }
 

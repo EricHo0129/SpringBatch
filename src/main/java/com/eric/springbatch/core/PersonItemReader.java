@@ -34,7 +34,9 @@ public class PersonItemReader implements ItemReader<Person> {
 		}
 		if (index < data.size()) {
 			log.info("reading data: "+data.get(index));
-			return data.get(index++);
+			Person readData = data.get(index++);
+			if (readData.getFirstName().equals("Jill")) throw new RuntimeException("No Jill!");
+			return readData;
 		}
 		return null;
 	}
