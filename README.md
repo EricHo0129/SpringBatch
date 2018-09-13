@@ -97,3 +97,10 @@ Spring-Batch的測試與練習
 - 將Step進行非同步執行，但同一個chunk還是會等滿了再送出，也就是同一個chunk內的程序視為同步
 - chunk的大小會影響分配taskExecutor的方式,也就是若chunk過大則會讓多筆資料放在同一條thread執行
 - 要特別注意reader與writer的scope，設為stepScope可保證在step結束後就消滅
+
+## Log
+- 使用套件 Spring自帶的logback(支援slf4J)
+- 使用套件 cloudwatch-logback-appender (github出品)
+- 特色
+     - 可依照環境區分要使用的Appender
+     - 可推到AWS的CloudWatch上,線上維護時較方便
