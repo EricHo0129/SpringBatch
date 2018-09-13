@@ -4,6 +4,7 @@ public class Person {
 
     private String lastName;
     private String firstName;
+    private boolean converted;
 
     public Person() {
     }
@@ -29,7 +30,15 @@ public class Person {
         this.lastName = lastName;
     }
 
-    @Override
+    public boolean getConverted() {
+		return converted;
+	}
+
+	public void setConverted(boolean converted) {
+		this.converted = converted;
+	}
+
+	@Override
     public String toString() {
         return "firstName: " + firstName + ", lastName: " + lastName;
     }

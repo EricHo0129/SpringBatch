@@ -16,7 +16,7 @@ public class SimulateItemWriter extends ListItemWriter<Person> {
 	@Override
 	public void write(List<? extends Person> items) throws Exception {
 		StringBuffer sb = new StringBuffer();
-		items.stream().forEach( p -> {
+		items.stream().filter(p -> p.getConverted()).forEach( p -> {
 			sb.append(p.getFirstName()).append("/");
 		});
 		log.info("Save to database! ("+sb.deleteCharAt(sb.length()-1).toString()+")");

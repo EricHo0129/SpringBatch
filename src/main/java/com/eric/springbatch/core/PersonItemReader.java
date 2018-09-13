@@ -19,6 +19,7 @@ public class PersonItemReader implements ItemReader<Person> {
 	private List<Person> data = new ArrayList<>();
 	
 	private void loadData() throws Exception {
+		log.info("data load from database, waiting...");
 		data.add(new Person("Jill", "Doe"));
 		data.add(new Person("Joe", "Doe"));
 		data.add(new Person("Justin", "Doe"));
@@ -28,12 +29,11 @@ public class PersonItemReader implements ItemReader<Person> {
 	}
 	
 	@Override
-	public Person read() throws Exception, UnexpectedInputException, ParseException, NonTransientResourceException {
+	synchronized public Person read() throws Exception, UnexpectedInputException, ParseException, NonTransientResourceException {
 		if (data.isEmpty()) {
 			loadData();
 		}
 		if (index < data.size()) {
-			log.info("reading data: "+data.get(index));
 			Person readData = data.get(index++);
 			if (readData.getFirstName().equals("Jill")) throw new RuntimeException("No Jill!");
 			return readData;
