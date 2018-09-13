@@ -25,7 +25,10 @@ public class PersonItemReader implements ItemReader<Person> {
 		data.add(new Person("Justin", "Doe"));
 		data.add(new Person("Jane", "Doe"));
 		data.add(new Person("John", "Doe"));
-		data.add(new Person("Eric", "Doe"));
+		data.add(new Person("Eric", "Ho"));
+		data.add(new Person("Chonpin", "Hsu"));
+		data.add(new Person("Jeremy", "Ting"));
+		data.add(new Person("Allen", "Wu"));
 	}
 	
 	@Override

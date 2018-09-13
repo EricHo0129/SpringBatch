@@ -43,17 +43,21 @@ Spring-Batch的測試與練習
 
 ### Listener
 - 目前僅用到ItemProcessor，用來記錄處理前後的資料樣貌
+- 要設定為StepScope
 - ![看圖](https://upload-images.jianshu.io/upload_images/5384456-635ef0821a2d799a.png)
 
 ### Reader
 - 讀資料的角色，目前先用模擬的，看起來真正有I/O的只有初始化時，之後都是取記憶體內的資料
 - 要設定為StepScope
+- read方法設為synchronized的目的是防止多執行緒來呼叫時,資料同步問題,因為資料讀取已經完成,所以不會有效能問題
 
 ### Processor
 - 資料處理的核心
+- 要設定為StepScope
 
 ### Writer
 - 資料處理完的動作，通常是寫資料庫，或推Queue、寫檔之類的輸出
+- 要設定為StepScope,不然已經寫入的資料又會再寫入
 
 ## Skip
 - 寫一個SkipPolicy，可以定義當遇到哪些例外的時候要中斷(不跳過)，哪些可跳過
