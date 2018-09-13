@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration  scan="true" scanPeriod="60 seconds" debug="false">
+    <contextName>logback</contextName>
+    <property name="log.path" value="D:\\Log\\spring-batch.log" />
+    <!--輸出到Console-->
+    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} %contextName [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!--輸出到檔案-->
+    <appender name="file" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${log.path}</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logback.%d{yyyy-MM-dd}.log</fileNamePattern>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} %contextName [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+    
+    <!-- 輸出到AWS-CloudWatch -->
+    <appender name="cloud-watch" class="io.github.dibog.AwsLogAppender">
+	    <awsConfig>
+    		<!-- 在EC2內不用 -->
+	        <credentials>
+	            <accessKeyId>${AWS_CLOUDWATCH_ACCESS_KEY}</accessKeyId>
+	            <secretAccessKey>${AWS_CLOUDWATCH_SECRET_KEY}</secretAccessKey>
+	        </credentials>
+	        <!-- 需要指定的時候 -->
+	        <region>ap-northeast-1</region>
+	        <!-- 在VPC內會用到
+	        <clientConfig class="com.amazonaws.ClientConfiguration">
+	            <proxyHost></proxyHost>
+	            <proxyPort></proxyPort>
+	        </clientConfig> -->
+	    </awsConfig>
+	
+	    <createLogGroup>true</createLogGroup>
+	    <queueLength>100</queueLength>
+	    <groupName>eric-test-logGroup</groupName>
+	    <streamName>erictestlog</streamName>
+	    <dateFormat>yyyy/MM/dd_HHmm</dateFormat>
+	    
+	     <layout>
+	        <pattern>%d{HH:mm:ss.SSS} %contextName [%thread] %-5level %logger{36} - %msg%n</pattern>
+	     </layout>
+	
+	</appender>
+
+    <root level="info">
+        <appender-ref ref="console" />
+        <!-- <appender-ref ref="file" /> -->
+    </root>
+
+    <!-- 可根據profile來決定 -->
+    <springProfile name="lab,staging">
+        <logger name="com.eric" level="info">
+        	<appender-ref ref="cloud-watch" />
+        </logger>
+    </springProfile>
+    
+    <springProfile name="prod">
+        <logger name="com.eric" level="ERROR" />
+    </springProfile>
+</configuration>

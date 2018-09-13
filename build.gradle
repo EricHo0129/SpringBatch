@@ -33,6 +33,7 @@ dependencies {
     compile 'org.springframework.boot:spring-boot-starter-web'
 	compile 'org.aspectj:aspectjweaver:1.9.1'
 	compile 'mysql:mysql-connector-java:5.1.18'
+	compile 'io.github.dibog:cloudwatch-logback-appender:1.0.0'
     testCompile("junit:junit")
 }
 
