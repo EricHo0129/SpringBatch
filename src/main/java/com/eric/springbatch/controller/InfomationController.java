@@ -8,12 +8,16 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.websocket.server.PathParam;
+
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobInstance;
 import org.springframework.batch.core.explore.JobExplorer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.eric.springbatch.config.BatchConfig;
@@ -50,5 +54,10 @@ public class InfomationController {
 		}
 		
 		return result;
+	}
+	
+	@GetMapping("/test/{pid}")
+	public void test(HttpServletRequest request ,@PathVariable("pid") Long pid) throws Exception {
+		System.out.println("ok..."+pid);
 	}
 }
